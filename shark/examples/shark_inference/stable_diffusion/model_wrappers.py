@@ -1,7 +1,9 @@
 from diffusers import AutoencoderKL, UNet2DConditionModel
 from transformers import CLIPTextModel
-from utils import compile_through_fx
-from stable_args import args
+from shark.examples.shark_inference.stable_diffusion.utils import (
+    compile_through_fx,
+)
+from shark.examples.shark_inference.stable_diffusion.stable_args import args
 import torch
 
 model_config = {
@@ -68,8 +70,7 @@ model_revision = {
 }
 
 
-def get_clip_mlir(model_name="clip_text", extra_args=[]):
-
+def get_clip_mlir(model_name="clip_text", extra_args=[], debug=False):
     text_encoder = CLIPTextModel.from_pretrained(
         "openai/clip-vit-large-patch14"
     )
@@ -107,11 +108,12 @@ def get_clip_mlir(model_name="clip_text", extra_args=[]):
         model_input[args.version]["clip"],
         model_name=model_name,
         extra_args=extra_args,
+        debug=debug,
     )
     return shark_clip
 
 
-def get_base_vae_mlir(model_name="vae", extra_args=[]):
+def get_base_vae_mlir(model_name="vae", extra_args=[], debug=False):
     class BaseVaeModel(torch.nn.Module):
         def __init__(self):
             super().__init__()
@@ -156,15 +158,12 @@ def get_base_vae_mlir(model_name="vae", extra_args=[]):
         raise ValueError(f"{args.variant} not yet added")
 
     shark_vae = compile_through_fx(
-        vae,
-        inputs,
-        model_name=model_name,
-        extra_args=extra_args,
+        vae, inputs, model_name=model_name, extra_args=extra_args, debug=debug
     )
     return shark_vae
 
 
-def get_vae_mlir(model_name="vae", extra_args=[]):
+def get_vae_mlir(model_name="vae_encode", extra_args=[], debug=False):
     class VaeModel(torch.nn.Module):
         def __init__(self):
             super().__init__()
@@ -216,11 +215,12 @@ def get_vae_mlir(model_name="vae", extra_args=[]):
         inputs,
         model_name=model_name,
         extra_args=extra_args,
+        debug=debug,
     )
     return shark_vae
 
 
-def get_unet_mlir(model_name="unet", extra_args=[]):
+def get_unet_mlir(model_name="unet", extra_args=[], debug=False):
     class UnetModel(torch.nn.Module):
         def __init__(self):
             super().__init__()
@@ -281,5 +281,6 @@ def get_unet_mlir(model_name="unet", extra_args=[]):
         inputs,
         model_name=model_name,
         extra_args=extra_args,
+        debug=debug,
     )
     return shark_unet

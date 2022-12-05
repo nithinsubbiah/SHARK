@@ -19,6 +19,9 @@ import subprocess as sp
 import hashlib
 import numpy as np
 from pathlib import Path
+from shark.examples.shark_inference.stable_diffusion import (
+    model_wrappers as mw,
+)
 
 visible_default = tf.config.list_physical_devices("GPU")
 try:
@@ -40,6 +43,10 @@ def create_hash(file_name):
     return file_hash.hexdigest()
 
 
+def get_folder_name(model_basename, device, precision_value):
+    return model_basename + "_" + device + "_" + precision_value + "_torch"
+
+
 def save_torch_model(torch_model_list):
     from tank.model_utils import get_hf_model
     from tank.model_utils import get_vision_model
@@ -59,6 +66,42 @@ def save_torch_model(torch_model_list):
 
             model = None
             input = None
+            if model_type == "fx_imported":
+                from shark.examples.shark_inference.stable_diffusion.stable_args import (
+                    args,
+                )
+
+                args.use_tuned = False
+                args.import_mlir = True
+                args.use_tuned = False
+                args.local_tank_cache = WORKDIR
+                device_types = ["cuda", "vulkan"]
+                scheduler_types = [
+                    "PNDM",
+                    "DDIM",
+                    "LMSDiscrete",
+                    "EulerDiscrete",
+                    "DPMSolverMultistep",
+                    "SharkEulerDiscrete",
+                ]
+                precision_values = ["fp16", "fp32"]
+                for device in device_types:
+                    args.device = device
+                    for precision_value in precision_values:
+                        args.precision = precision_value
+                        if torch_model_name == "clip":
+                            model_name = get_folder_name(
+                                torch_model_name, device, precision_value
+                            )
+                            torch_model_dir = os.path.join(WORKDIR, model_name)
+                            os.makedirs(torch_model_dir, exist_ok=True)
+                            print(args)
+                            mw.get_clip_mlir(model_name=model_name, debug=True)
+                        # if torch_model_name == "unet":
+                        #    mw.get_unet_mlir(debug=True)
+                        # if torch_model_name =="vae":
+                        #    mw.get_vae_mlir(debug=True)
+                continue
             if model_type == "vision":
                 model, input, _ = get_vision_model(torch_model_name)
             elif model_type == "hf":
@@ -239,11 +282,11 @@ if __name__ == "__main__":
     if args.torch_model_csv:
         save_torch_model(args.torch_model_csv)
 
-    if args.tf_model_csv:
-        save_tf_model(args.tf_model_csv)
+    #    if args.tf_model_csv:
+    #        save_tf_model(args.tf_model_csv)
 
-    if args.tflite_model_csv:
-        save_tflite_model(args.tflite_model_csv)
+    #    if args.tflite_model_csv:
+    #        save_tflite_model(args.tflite_model_csv)
 
     if args.upload:
         git_hash = sp.getoutput("git log -1 --format='%h'") + "/"

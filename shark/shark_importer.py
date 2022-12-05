@@ -130,6 +130,7 @@ class SharkImporter:
     ):
         import numpy as np
 
+        print("dir in save data:" + dir)
         inputs_name = "inputs.npz"
         outputs_name = "golden_out.npz"
         func_file_name = "function_name"
@@ -246,7 +247,13 @@ class SharkImporter:
 
 
 # Applies fx conversion to the model and imports the mlir.
-def import_with_fx(model, inputs, debug=False):
+def import_with_fx(
+    model,
+    inputs,
+    debug=False,
+    save_dir=tempfile.gettempdir(),
+    model_name="model",
+):
     import torch
     from torch.fx.experimental.proxy_tensor import make_fx
     from torch._decomp import get_decompositions
@@ -293,7 +300,9 @@ def import_with_fx(model, inputs, debug=False):
     )
 
     if debug:
-        (mlir_module, func_name), _, _ = mlir_importer.import_debug()
+        (mlir_module, func_name), _, _ = mlir_importer.import_debug(
+            dir=save_dir, model_name=model_name
+        )
         return mlir_module, func_name
 
     mlir_module, func_name = mlir_importer.import_mlir()
