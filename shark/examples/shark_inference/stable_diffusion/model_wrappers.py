@@ -1,17 +1,19 @@
-from diffusers import AutoencoderKL, UNet2DConditionModel
+from diffusers import AutoencoderKL, UNet2DConditionModel, PNDMScheduler
 from transformers import CLIPTextModel
 from utils import compile_through_fx
 from stable_args import args
 import torch
 
+BATCH_SIZE = len(args.prompts)
+
 model_config = {
-    "v2.1": "stabilityai/stable-diffusion-2-1",
+    "v2": "stabilityai/stable-diffusion-2",
     "v2.1base": "stabilityai/stable-diffusion-2-1-base",
     "v1.4": "CompVis/stable-diffusion-v1-4",
 }
 
 model_input = {
-    "v2.1": {
+    "v2": {
         "clip": (torch.randint(1, 2, (1, 77)),),
         "vae": (torch.randn(1, 4, 96, 96),),
         "unet": (
@@ -52,7 +54,7 @@ def get_clip_mlir(model_name="clip_text", extra_args=[]):
     text_encoder = CLIPTextModel.from_pretrained(
         "openai/clip-vit-large-patch14"
     )
-    if args.version != "v1.4":
+    if args.version == "v2":
         text_encoder = CLIPTextModel.from_pretrained(
             model_config[args.version], subfolder="text_encoder"
         )

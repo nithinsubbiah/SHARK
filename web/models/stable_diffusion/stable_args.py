@@ -7,15 +7,8 @@ p = argparse.ArgumentParser(
 p.add_argument(
     "--prompts",
     nargs="+",
-    default=["cyberpunk forest by Salvador Dali"],
+    default=["a photograph of an astronaut riding a horse"],
     help="text of which images to be generated.",
-)
-
-p.add_argument(
-    "--negative-prompts",
-    nargs="+",
-    default=["trees, green"],
-    help="text you don't want to see in the generated image.",
 )
 
 p.add_argument(
@@ -105,15 +98,9 @@ p.add_argument(
 
 p.add_argument(
     "--use_tuned",
-    default=True,
+    default=False,
     action=argparse.BooleanOptionalAction,
     help="Download and use the tuned version of the model if available",
-)
-
-p.add_argument(
-    "--local_tank_cache",
-    default="",
-    help="Specify where to save downloaded shark_tank artifacts. If this is not set, the default is ~/.local/shark_tank/.",
 )
 
 p.add_argument(

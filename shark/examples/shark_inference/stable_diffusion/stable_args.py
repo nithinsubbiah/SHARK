@@ -7,21 +7,12 @@ p = argparse.ArgumentParser(
 p.add_argument(
     "--prompts",
     nargs="+",
-    default=["cyberpunk forest by Salvador Dali"],
+    default=["a photograph of an astronaut riding a horse"],
     help="text of which images to be generated.",
 )
-
-p.add_argument(
-    "--negative-prompts",
-    nargs="+",
-    default=["trees, green"],
-    help="text you don't want to see in the generated image.",
-)
-
 p.add_argument(
     "--device", type=str, default="cpu", help="device to run the model."
 )
-
 p.add_argument(
     "--steps",
     type=int,
@@ -42,7 +33,6 @@ p.add_argument(
     default=42,
     help="the seed to use.",
 )
-
 p.add_argument(
     "--guidance_scale",
     type=float,
@@ -101,12 +91,6 @@ p.add_argument(
     default=False,
     action=argparse.BooleanOptionalAction,
     help="Download and use the tuned version of the model if available",
-)
-
-p.add_argument(
-    "--local_tank_cache",
-    default="",
-    help="Specify where to save downloaded shark_tank artifacts. If this is not set, the default is ~/.local/shark_tank/.",
 )
 
 p.add_argument(

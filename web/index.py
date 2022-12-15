@@ -50,7 +50,7 @@ demo_css = """
 footer {display: none !important;}
 """
 
-with gr.Blocks(title="Stable Diffusion", css=demo_css) as shark_web:
+with gr.Blocks(css=demo_css) as shark_web:
 
     with gr.Row(elem_id="ui_title"):
         nod_logo = Image.open(nodlogo_loc)
@@ -78,13 +78,7 @@ with gr.Blocks(title="Stable Diffusion", css=demo_css) as shark_web:
                 with gr.Group(elem_id="prompt_box_outer"):
                     prompt = gr.Textbox(
                         label="Prompt",
-                        value="cyberpunk forest by Salvador Dali",
-                        lines=1,
-                        elem_id="prompt_box",
-                    )
-                    negative_prompt = gr.Textbox(
-                        label="Negative Prompt",
-                        value="trees, green",
+                        value="A photograph of an astronaut riding a horse",
                         lines=1,
                         elem_id="prompt_box",
                     )
@@ -104,6 +98,11 @@ with gr.Blocks(title="Stable Diffusion", css=demo_css) as shark_web:
                         value=7.5,
                         step=0.1,
                         label="Guidance Scale",
+                    )
+                    version = gr.Radio(
+                        label="Version",
+                        value="v2.1base",
+                        choices=["v1.4", "v2.1base"],
                     )
                 with gr.Row():
                     scheduler_key = gr.Dropdown(
@@ -139,26 +138,26 @@ with gr.Blocks(title="Stable Diffusion", css=demo_css) as shark_web:
                             _js="(min,max) => Math.floor(Math.random() * (max - min)) + min",
                         )
                 stable_diffusion = gr.Button("Generate Image")
-            with gr.Column(scale=1, min_width=600):
-                with gr.Group():
-                    generated_img = gr.Image(
-                        type="pil", interactive=False
-                    ).style(height=512)
+                with gr.Accordion("Performace Details:"):
                     std_output = gr.Textbox(
                         value="Nothing to show.",
                         lines=4,
                         show_label=False,
                     )
+            with gr.Column(scale=1, min_width=600):
+                generated_img = gr.Image(type="pil", interactive=False).style(
+                    height=768
+                )
 
         prompt.submit(
             stable_diff_inf,
             inputs=[
                 prompt,
-                negative_prompt,
                 steps,
                 guidance,
                 seed,
                 scheduler_key,
+                version,
             ],
             outputs=[generated_img, std_output],
         )
@@ -166,11 +165,11 @@ with gr.Blocks(title="Stable Diffusion", css=demo_css) as shark_web:
             stable_diff_inf,
             inputs=[
                 prompt,
-                negative_prompt,
                 steps,
                 guidance,
                 seed,
                 scheduler_key,
+                version,
             ],
             outputs=[generated_img, std_output],
         )
@@ -178,7 +177,6 @@ with gr.Blocks(title="Stable Diffusion", css=demo_css) as shark_web:
 shark_web.queue()
 shark_web.launch(
     share=False,
-    inbrowser=True,
     server_name="0.0.0.0",
     server_port=8080,
 )

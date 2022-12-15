@@ -4,6 +4,7 @@ from tqdm.auto import tqdm
 from models.stable_diffusion.cache_objects import (
     cache_obj,
     schedulers,
+    schedulers2,
 )
 from models.stable_diffusion.stable_args import args
 from random import randint
@@ -11,24 +12,22 @@ import numpy as np
 import time
 
 
-def set_ui_params(
-    prompt, negative_prompt, steps, guidance, seed, scheduler_key
-):
-    args.prompts = [prompt]
-    args.negative_prompts = [negative_prompt]
+def set_ui_params(prompt, steps, guidance, seed, scheduler_key, version):
+    args.prompt = [prompt]
     args.steps = steps
     args.guidance = guidance
     args.seed = seed
     args.scheduler = scheduler_key
+    args.version = version
 
 
 def stable_diff_inf(
     prompt: str,
-    negative_prompt: str,
     steps: int,
     guidance: float,
     seed: int,
     scheduler_key: str,
+    version: str,
 ):
 
     # Handle out of range seeds.
@@ -37,26 +36,33 @@ def stable_diff_inf(
     if seed < uint32_min or seed >= uint32_max:
         seed = randint(uint32_min, uint32_max)
 
-    set_ui_params(
-        prompt, negative_prompt, steps, guidance, seed, scheduler_key
-    )
+    set_ui_params(prompt, steps, guidance, seed, scheduler_key, version)
     dtype = torch.float32 if args.precision == "fp32" else torch.half
     generator = torch.manual_seed(
         args.seed
     )  # Seed generator to create the inital latent noise
     guidance_scale = torch.tensor(args.guidance).to(torch.float32)
     # Initialize vae and unet models.
-    vae, unet, clip, tokenizer = (
-        cache_obj["vae"],
-        cache_obj["unet"],
-        cache_obj["clip"],
-        cache_obj["tokenizer"],
-    )
-    scheduler = schedulers[args.scheduler]
+    if args.version == "v2.1base":
+        vae, unet, clip, tokenizer = (
+            cache_obj["vae2"],
+            cache_obj["unet2"],
+            cache_obj["clip2"],
+            cache_obj["tokenizer2"],
+        )
+        scheduler = schedulers2[args.scheduler]
+    else:
+        vae, unet, clip, tokenizer = (
+            cache_obj["vae"],
+            cache_obj["unet"],
+            cache_obj["clip"],
+            cache_obj["tokenizer"],
+        )
+        scheduler = schedulers[args.scheduler]
 
     start = time.time()
     text_input = tokenizer(
-        args.prompts,
+        args.prompt,
         padding="max_length",
         max_length=args.max_length,
         truncation=True,
@@ -70,10 +76,9 @@ def stable_diff_inf(
     max_length = text_input.input_ids.shape[-1]
 
     uncond_input = tokenizer(
-        args.negative_prompts,
+        [""],
         padding="max_length",
         max_length=max_length,
-        truncation=True,
         return_tensors="pt",
     )
     uncond_clip_inf_start = time.time()
@@ -134,8 +139,7 @@ def stable_diff_inf(
     avg_ms = 1000 * avg_ms / args.steps
     total_time = time.time() - start
 
-    text_output = f"prompt={args.prompts}"
-    text_output += f"\nnegative prompt={args.negative_prompts}"
+    text_output = f"prompt={args.prompt}"
     text_output += f"\nsteps={args.steps}, guidance_scale={args.guidance}, scheduler={args.scheduler}, seed={args.seed}, size={args.height}x{args.width}, version={args.version}"
     text_output += "\nAverage step time: {0:.2f}ms/it".format(avg_ms)
     print(f"\nAverage step time: {avg_ms}ms/it")
